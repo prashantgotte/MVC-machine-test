@@ -1,0 +1,30 @@
+public class ProductController : Controller
+{
+    private readonly AppDbContext _dbContext;
+
+    public ProductController()
+    {
+        _dbContext = new AppDbContext();
+    }
+
+    public ActionResult Index(int? page)
+    {
+        int pageSize = 10;
+        int pageNumber = (page ?? 1);
+        var products = _dbContext.Products.Include(p => p.Category).OrderBy(p => p.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+        return View(products);
+    }
+
+    public ActionResult Create()
+    {
+        var categories = _dbContext.Categories.ToList();
+        ViewBag.Categories = new SelectList(categories, "Id", "Name");
+        return View();
+    }
+
+    [HttpPost]
+    public ActionResult Create(Product product)
+    {
+        _dbContext.Products.Add(product);
+        _dbContext.SaveChanges();
+        return RedirectToAction("Index
