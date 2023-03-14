@@ -1,0 +1,83 @@
+// Define a Category class to represent category records in the database
+public class Category {
+    public int Id { get; set; }
+    public string Name { get; set; }
+}
+
+// Define a Product class to represent product records in the database
+public class Product {
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int CategoryId { get; set; }
+    public Category Category { get; set; }
+}
+
+// Define a DbContext class that represents the database schema
+public class MyDbContext : DbContext {
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Product> Products { get; set; }
+}
+
+// Define a controller class that handles HTTP requests and communicates with the database
+public class ProductController : Controller {
+    private readonly MyDbContext _context;
+    public ProductController(MyDbContext context) {
+        _context = context;
+    }
+
+    // Define an action method that returns a view or page that displays the product list
+    public IActionResult Index(int page = 1, int pageSize = 10) {
+        var products = _context.Products.Include(p => p.Category).Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return View(products);
+    }
+
+    // Define an action method that returns a view or page for creating a new product
+    [HttpGet]
+    public IActionResult Create() {
+        ViewBag.Categories = _context.Categories.ToList();
+        return View();
+    }
+
+    // Define an action method that handles the POST request for creating a new product
+    [HttpPost]
+    public IActionResult Create(Product product) {
+        if (ModelState.IsValid) {
+            _context.Products.Add(product);
+            _context.SaveChanges();
+            return RedirectToAction("Index");
+        }
+        ViewBag.Categories = _context.Categories.ToList();
+        return View(product);
+    }
+
+    // Define an action method that returns a view or page for editing an existing product
+    [HttpGet]
+    public IActionResult Edit(int id) {
+        var product = _context.Products.Include(p => p.Category).FirstOrDefault(p => p.Id == id);
+        ViewBag.Categories = _context.Categories.ToList();
+        return View(product);
+    }
+
+    // Define an action method that handles the POST request for editing an existing product
+    [HttpPost]
+    public IActionResult Edit(Product product) {
+        if (ModelState.IsValid) {
+            _context.Products.Update(product);
+            _context.SaveChanges();
+            return RedirectToAction("Index");
+        }
+        ViewBag.Categories = _context.Categories.ToList();
+        return View(product);
+    }
+
+    // Define an action method that handles the HTTP request for deleting an existing product
+    [HttpPost]
+    public IActionResult Delete(int id) {
+        var product = _context.Products.FirstOrDefault(p => p.Id == id);
+        if (product != null) {
+            _context.Products.Remove(product);
+            _context.SaveChanges();
+        }
+        return RedirectToAction("Index");
+    }
+}
